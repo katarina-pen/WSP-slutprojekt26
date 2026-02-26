@@ -4,7 +4,7 @@ db = SQLite3::Database.new("databas.db")
 
 
 def seed!(db)
-  puts "Using db file: db/todos.db"
+  puts "Using db file: db/databs.db"
   puts "🧹 Dropping old tables..."
   drop_tables(db)
   puts "🧱 Creating tables..."
@@ -16,6 +16,10 @@ end
 
 def drop_tables(db)
   db.execute('DROP TABLE IF EXISTS exempel')
+  db.execute('DROP TABLE IF EXISTS users')
+  db.execute('DROP TABLE IF EXISTS items')
+  db.execute('DROP TABLE IF EXISTS enemies')
+
 end
 
 def create_tables(db)
@@ -24,6 +28,25 @@ def create_tables(db)
               name TEXT NOT NULL, 
               description TEXT,
               state BOOLEAN)')
+
+  db.execute('CREATE TABLE users (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              username TEXT NOT NULL,
+              pwd_digest TEXT) ')
+  # inte klar än
+  db.execute('CREATE TABLE items (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              type_id INTEGER,
+              name TEXT NOT NULL,
+              damage INT )')
+
+   db.execute('CREATE TABLE enemies (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              type_id INTEGER,
+              name TEXT NOT NULL,
+              damage INT,
+              state BOOLEAN)')
+
 end
 
 def populate_tables(db)
