@@ -3,3 +3,9 @@ div class="title"
     <p class="text-blue-600 dark:text-sky-400">This is the index file</p>
 
     link href="index.css" rel='stylesheet' type='text/css'
+
+-@itemsData.each do |items|
+    p Namn: #{items["name"]}
+    p Damage: #{items["damage"]}
+    p Type: #{items["type_id"]}
+    br

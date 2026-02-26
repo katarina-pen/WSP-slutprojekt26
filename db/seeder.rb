@@ -33,7 +33,7 @@ def create_tables(db)
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               username TEXT NOT NULL,
               pwd_digest TEXT) ')
-  # inte klar än
+  # inte klar än(?)
   db.execute('CREATE TABLE items (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               type_id INTEGER,
@@ -53,6 +53,13 @@ def populate_tables(db)
   db.execute('INSERT INTO exempel (name, description, state) VALUES ("Köp mjölk", "3 liter mellanmjölk, eko",false)')
   db.execute('INSERT INTO exempel (name, description, state) VALUES ("Köp julgran", "En rödgran",false)')
   db.execute('INSERT INTO exempel (name, description, state) VALUES ("Pynta gran", "Glöm inte lamporna i granen och tomten",false)')
+end
+
+#ITEMS
+def populate_tables(db)
+  db.execute('INSERT INTO items (type_id, name, damage) VALUES ("1","Klubba", "10")')
+  db.execute('INSERT INTO items (type_id, name, damage) VALUES ("2","Svärd", "15")')
+  db.execute('INSERT INTO items (type_id, name, damage) VALUES ("2","Kniv", "3")')
 end
 
 
