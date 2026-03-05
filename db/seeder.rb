@@ -45,6 +45,7 @@ def create_tables(db)
               type_id INTEGER,
               name TEXT NOT NULL,
               damage INT,
+              health INT,
               state BOOLEAN)')
 
 end
@@ -55,12 +56,19 @@ def populate_tables(db)
   db.execute('INSERT INTO exempel (name, description, state) VALUES ("Pynta gran", "Glöm inte lamporna i granen och tomten",false)')
 end
 
-#ITEMS
+
 def populate_tables(db)
+  #ITEMS
   db.execute('INSERT INTO items (type_id, name, damage) VALUES ("1","Klubba", "10")')
   db.execute('INSERT INTO items (type_id, name, damage) VALUES ("2","Svärd", "15")')
   db.execute('INSERT INTO items (type_id, name, damage) VALUES ("2","Kniv", "3")')
+  #ENEMIES
+  db.execute('INSERT INTO enemies (type_id, name, damage, health, state) VALUES ("2","gremlin", "10","50", "alive")')
+  db.execute('INSERT INTO enemies (type_id, name, damage, health, state) VALUES ("1","zombie", "15", "20", "alive")')
+  db.execute('INSERT INTO enemies (type_id, name, damage, health, state) VALUES ("2","troll", "3", "10", "alive")')
 end
+
+
 
 
 seed!(db)

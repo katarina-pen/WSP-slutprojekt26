@@ -5,16 +5,18 @@ require 'sinatra/reloader'
 require 'bcrypt'
 
 
-#READ
+#READ📖
 get('/') do
   db = SQLite3:: Database.new("db/databas.db")
   db.results_as_hash = true
   @itemsData = db.execute("SELECT * FROM items")
+  @enemiesData = db.execute("SELECT * FROM enemies")
+
   
   slim(:index) 
 end
 
-#CREATE
+#CREATE🔥📄
 get('/new') do 
   slim(:new)
 end
@@ -27,13 +29,13 @@ post('/new') do
   p "Användaren vill skapa #{newItemsName} med damage #{newItemsDamg} och type id #{newItemsType} "
 
   db = SQLite3::Database.new("db/databas.db")
-  db.execute("INSERT INTO items (type_id, name, damage) VALUES (?,?,?)", [newItemsName,newItemsDamg,newItemsType])
-  redirect("/") #hoppa till routen som visar upp alla todos
+  db.execute("INSERT INTO items (type_id, name, damage) VALUES (?,?,?)", [newItemsType,newItemsName,newItemsDamg])
+  redirect("/") 
 
 end
 
-#UPDATE 
-get('items/:id/edit') do
+#UPDATE🔁 
+get('/items/:id/edit') do
   db = SQLite3::Database.new("db/databas.db")
 
   db.results_as_hash = true
@@ -52,6 +54,14 @@ post('/items/:id/update') do
   db.execute("UPDATE items SET name=?, damage=? WHERE id=?",[name,damage,id])
   redirect('/')
 
+end
+
+#DELETE🗑️
+post('/items/:id/delete') do 
+  id = params[:id].to_i
+  db = SQLite3::Database.new("db/databas.db")
+  db.execute("DELETE FROM items WHERE id = ?",id)
+  redirect("/")
 end
 
 

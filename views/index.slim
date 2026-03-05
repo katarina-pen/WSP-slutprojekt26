@@ -3,9 +3,42 @@ div class="title"
     <p class="text-blue-600 dark:text-sky-400">This is the index file</p>
 
     link href="index.css" rel='stylesheet' type='text/css'
-
+    br
 -@itemsData.each do |items|
     p Namn: #{items["name"]}
     p Damage: #{items["damage"]}
     p Type: #{items["type_id"]}
     br
+
+-@enemiesData.each do |enemies|
+    p Namn: #{enemies["name"]}
+    p Damage: #{enemies["damage"]}
+    p Type: #{enemies["type_id"]}
+    p Health: #{enemies["health"]}
+    p State: #{enemies["state"]}
+    br
+
+br
+-@itemsData.each do |items|
+    p #{items["name"]}
+    p Damage: #{items["damage"]}
+    p Type: #{items["type_id"]}
+    
+    h5 
+        a href="/items/#{items["id"]}/edit" Redigera #{items["name"]} 
+
+
+    form action="/items/#{items["id"]}/delete" method="post"
+      input type="submit" value="Ta bort #{items["name"]}🔥🗑️"
+
+    hr
+
+    
+
+/ h2 Skapa ett nytt item
+/ h5 
+/   a href="/todoNew" Ny todo
+
+/   h2 Registera användare
+/ h5 
+/   a href="/todoRegister" Registrera
