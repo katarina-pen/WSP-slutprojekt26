@@ -4,21 +4,26 @@ div class="title"
 
     link href="index.css" rel='stylesheet' type='text/css'
     br
+h1 ITEMS
 -@itemsData.each do |items|
     p Namn: #{items["name"]}
     p Damage: #{items["damage"]}
     p Type: #{items["type_id"]}
     br
 
+h1 ENEMIES
 -@enemiesData.each do |enemies|
     p Namn: #{enemies["name"]}
     p Damage: #{enemies["damage"]}
     p Type: #{enemies["type_id"]}
     p Health: #{enemies["health"]}
     p State: #{enemies["state"]}
+    a href="/enemies/#{enemies["id"]}/fight" Fight #{enemies["name"]} 
+
     br
 
 br
+h1 CHANGE ITEMS
 -@itemsData.each do |items|
     p #{items["name"]}
     p Damage: #{items["damage"]}

@@ -1,3 +1,15 @@
 h1 this is fight
 
-img src="img/mouse.png" alt="no mouse :(" width="500" height="600"
+/ img src="img/mouse.png" alt="no mouse :(" width="500" height="600"
+p Du möte #{@enemiesData[0]["name"]}
+/ p Du möte en #{@enemiesData[:id]["name"]}
+/ p Du möte en #{enemies[:id]["name"]}
+
+/ p #{enemies[:name]}
+p Damage: #{@enemiesData[0]["damage"]}
+p Health: #{@enemiesData[0]["health"]}
+p State: #{@enemiesData[0]["state"]}
+
+/ form action="/'/enemies/:id/attack'/ do
+form action ="/enemies/#{@enemiesData[0]["id"]}/attack" method="post"
+    input type="submit" value="Attackera #{@enemiesData[0]["name"]}"
