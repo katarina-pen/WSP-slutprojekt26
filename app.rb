@@ -67,17 +67,26 @@ end
 #FIGHT!🤺⚔️
 get('/enemies/:id/fight') do
   id = params[:id].to_i
+  itemsDamg = params[:itemsDamage].to_i
   db = SQLite3:: Database.new("db/databas.db")
   db.results_as_hash = true
   @enemiesData = db.execute("SELECT * FROM enemies WHERE id = ?",id)
+  @itemsData = db.execute("SELECT * FROM items")
+
   slim(:fight)
 end
 
 post("/enemies/:id/attack") do
   id = params[:id].to_i
+  itemsDamg = params[:itemsDamage].to_i
   db = SQLite3::Database.new("db/databas.db")
-  #placeholder, hårdkodat health till -5 
-  db.execute("UPDATE enemies SET health=health-5 WHERE id = ?",id)
-  redirect('/enemies/:id/fight')
+  db.execute("UPDATE enemies SET health=health-? WHERE id = ?",[itemsDamg, id])
+  redirect("/enemies/#{id}/fight")
 end
 
+
+#STORE🛒💵💰
+get("/store") do
+
+  slim(:store)
+end

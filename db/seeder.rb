@@ -33,13 +33,13 @@ def create_tables(db)
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               username TEXT NOT NULL,
               pwd_digest TEXT) ')
-  # inte klar än(?)
+  # inte klar än(?) ta bort type_id, vad gör ens det?
   db.execute('CREATE TABLE items (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               type_id INTEGER,
               name TEXT NOT NULL,
               damage INT )')
-
+#lägg till rewards som spelaren får när fiendens state är död
    db.execute('CREATE TABLE enemies (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               type_id INTEGER,
