@@ -30,12 +30,13 @@ def create_tables(db)
               state BOOLEAN)')
 
   db.execute('CREATE TABLE users (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              username TEXT NOT NULL,
-              pwd_digest TEXT) ')
-  # inte klar än(?) ta bort type_id, vad gör ens det?
+              id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+              username TEXT NOT NULL UNIQUE,
+              pwd_digest TEXT NOT NULL ) ')
+            #felmeddelande för user_id "NOT NULL"-lös varför 
   db.execute('CREATE TABLE items (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_id INTEGER ,
               type_id INTEGER,
               name TEXT NOT NULL,
               damage INT )')

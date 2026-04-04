@@ -5,6 +5,50 @@ require 'sinatra/reloader'
 require 'bcrypt'
 
 
+#USERS, register + login
+get("/register") do
+  slim(:register)
+end
+
+post("/users/new") do
+  username= params[:username]
+  password= params[:password]
+  password_confirm= params[:password_confirm]
+
+  if (password == password_confirm)
+    #lägg till användare
+    password_digest = BCrypt::Password.create(password) 
+    db = SQLite3:: Database.new("db/databas.db")
+    db.execute("INSERT INTO users (username, pwd_digest) VALUES (?,?)",[username, password_digest])
+    redirect("/register")
+  else
+    #felhantering
+    "Passwords did not match :("
+  end
+
+end
+
+get("/login") do
+  slim(:login)
+end
+
+post("/login") do
+  username= params[:username]
+  password= params[:password]
+  db = SQLite3:: Database.new("db/databas.db")
+  db.results_as_hash = true
+  result= db.execute("SELECT * FROM users WHERE username=?",username).first
+  pwd_digest=result["pwd_digest"]
+  id=result["id"]
+
+  if BCrypt::Password.new(pwd_digest)==password
+    redirect("/")
+  else  
+    "womp womp, fel lösenord"
+  end
+
+end
+
 #READ📖
 get('/') do
   db = SQLite3:: Database.new("db/databas.db")
@@ -72,7 +116,7 @@ get('/enemies/:id/fight') do
   db.results_as_hash = true
   @enemiesData = db.execute("SELECT * FROM enemies WHERE id = ?",id)
   @itemsData = db.execute("SELECT * FROM items")
-
+ 
   slim(:fight)
 end
 
@@ -82,7 +126,7 @@ post("/enemies/:id/attack") do
   db = SQLite3::Database.new("db/databas.db")
   db.execute("UPDATE enemies SET health=health-? WHERE id = ?",[itemsDamg, id])
   redirect("/enemies/#{id}/fight")
-end
+end 
 
 
 #STORE🛒💵💰
