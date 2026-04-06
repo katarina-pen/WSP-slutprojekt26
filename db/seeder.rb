@@ -15,31 +15,36 @@ def seed!(db)
 end
 
 def drop_tables(db)
-  db.execute('DROP TABLE IF EXISTS exempel')
   db.execute('DROP TABLE IF EXISTS users')
+  db.execute('DROP TABLE IF EXISTS users_items')
   db.execute('DROP TABLE IF EXISTS items')
   db.execute('DROP TABLE IF EXISTS enemies')
 
 end
 
 def create_tables(db)
-  db.execute('CREATE TABLE exempel (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              name TEXT NOT NULL, 
-              description TEXT,
-              state BOOLEAN)')
-
+            #la till money och alla users har 20 money från början
   db.execute('CREATE TABLE users (
               id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
               username TEXT NOT NULL UNIQUE,
-              pwd_digest TEXT NOT NULL ) ')
+              pwd_digest TEXT NOT NULL,
+              money INTEGER DEFAULT 20  ) ')
             #felmeddelande för user_id "NOT NULL"-lös varför 
+            #items är typ shop för tillfället, cost måste läggas till. user_id borde nog tas bort
   db.execute('CREATE TABLE items (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               user_id INTEGER ,
               type_id INTEGER,
               name TEXT NOT NULL,
-              damage INT )')
+              damage INT,
+              cost INTEGER NOT NULL )')
+            #relationstabell för users och items, many to many
+  db.execute('CREATE TABLE users_items (
+              users_id INT,
+              items_id INT,
+              PRIMARY KEY (users_id, items_id),
+              FOREIGN KEY (users_id) REFERENCES users(id),
+              FOREIGN KEY (items_id) REFERENCES items(id) )')
 #lägg till rewards som spelaren får när fiendens state är död
    db.execute('CREATE TABLE enemies (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,18 +56,19 @@ def create_tables(db)
 
 end
 
-def populate_tables(db)
-  db.execute('INSERT INTO exempel (name, description, state) VALUES ("Köp mjölk", "3 liter mellanmjölk, eko",false)')
-  db.execute('INSERT INTO exempel (name, description, state) VALUES ("Köp julgran", "En rödgran",false)')
-  db.execute('INSERT INTO exempel (name, description, state) VALUES ("Pynta gran", "Glöm inte lamporna i granen och tomten",false)')
-end
+
 
 
 def populate_tables(db)
-  #ITEMS
-  db.execute('INSERT INTO items (type_id, name, damage) VALUES ("1","Klubba", "10")')
-  db.execute('INSERT INTO items (type_id, name, damage) VALUES ("2","Svärd", "15")')
-  db.execute('INSERT INTO items (type_id, name, damage) VALUES ("2","Kniv", "3")')
+  #USERS
+  #alla spelare börjar med 10 money
+  # db.execute('INSERT INTO users (money) VALUES ("10")')
+  db.execute('INSERT INTO users_items (items_id) VALUES ("Liten gren")')
+  
+  #ITEMS /SHOP
+  db.execute('INSERT INTO items (cost, name, damage) VALUES ("1","Klubba", "10")')
+  db.execute('INSERT INTO items (cost, name, damage) VALUES ("2","Svärd", "15")')
+  db.execute('INSERT INTO items (cost, name, damage) VALUES ("2","Kniv", "3")')
   #ENEMIES
   db.execute('INSERT INTO enemies (type_id, name, damage, health, state) VALUES ("2","gremlin", "10","50", "alive")')
   db.execute('INSERT INTO enemies (type_id, name, damage, health, state) VALUES ("1","zombie", "15", "20", "alive")')

@@ -4,6 +4,7 @@ require 'sqlite3'
 require 'sinatra/reloader'
 require 'bcrypt'
 
+enable :sessions
 
 #USERS, register + login
 get("/register") do
@@ -42,12 +43,26 @@ post("/login") do
   id=result["id"]
 
   if BCrypt::Password.new(pwd_digest)==password
-    redirect("/")
+    session[:id] = id 
+    redirect("/story")
   else  
     "womp womp, fel lösenord"
   end
 
 end
+
+#test sida för när users är inloggad
+get('/story') do
+  id = session[:id].to_i
+  # username = session[:id]
+  db = SQLite3:: Database.new("db/databas.db")
+  db.results_as_hash = true
+  result= db.execute("SELECT * FROM users_items WHERE users_id=?",id)
+  p "Alla items från result: #{result}"
+
+  slim(:"story/story_1", locals:{userItems:result})
+end
+
 
 #READ📖
 get('/') do
@@ -130,7 +145,12 @@ end
 
 
 #STORE🛒💵💰
-get("/store") do
+get("/shop") do
 
-  slim(:store)
+  db = SQLite3:: Database.new("db/databas.db")
+  db.results_as_hash = true
+  @itemsData = db.execute("SELECT * FROM items")
+  @usersData = db.execute("SELECT money FROM users")
+
+  slim(:shop)
 end

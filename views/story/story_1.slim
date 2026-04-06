@@ -1,0 +1,18 @@
+h1 Här är spelarens story :D
+h2 Spelare #{session[:id]}
+/ p  #{session[:username]}
+
+
+p Du går in i en mörk skog. Efter att ha gått ett tag så ser du ett ljus mellan träden. Du är springer dit men snubblar på en liten gren. 
+br "Attans också" tänker du. 
+p Men du ser det som något positivt och plockar upp grenen, den kan vara bra att ha i framtiden. Du forsätter att gå tills du når fram till en liten stuga. 
+br "Shop" står det på dörren. 
+br
+a href="/shop" Öppna dörren och gå in
+
+
+h2 Inventory
+- userItems.each do |items|
+    p = items
+
+h2 Stats

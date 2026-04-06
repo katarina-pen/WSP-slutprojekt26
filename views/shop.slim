@@ -1,0 +1,14 @@
+h1 Shop 
+h2 Välkommen till den bästa shopen i hela skogen!
+p Dessutom den enda men det är inte relevant ...
+p Vad intresserar dig äventyrare?
+hr
+-@itemsData.each do |items|
+    p Name: #{items["name"]}
+    p Damage: #{items["damage"]}
+    p Cost: #{items["cost"]}
+    form action ="/shop/#{@itemsData[0]["id"]}/buy" method= "post"
+        input type= "submit" value="Köp #{items["name"]}"
+    hr
+
+h1 Money balance: #{@usersData}
