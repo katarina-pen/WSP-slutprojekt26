@@ -12,7 +12,8 @@ a href="/shop" Öppna dörren och gå in
 
 
 h2 Inventory
-- userItems.each do |items|
-    p = items
+-@usersInventory.each do |items|
+    p #{items["name"]}
 
 h2 Stats
+p User health: #{@userStats[0]["health"]}

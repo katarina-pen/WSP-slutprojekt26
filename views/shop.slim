@@ -2,13 +2,24 @@ h1 Shop
 h2 Välkommen till den bästa shopen i hela skogen!
 p Dessutom den enda men det är inte relevant ...
 p Vad intresserar dig äventyrare?
+p Kom ihåg att du bara kan köpa ett item en gång. Du kan inte äga flera kopior av samma item!🤯
 hr
 -@itemsData.each do |items|
     p Name: #{items["name"]}
     p Damage: #{items["damage"]}
     p Cost: #{items["cost"]}
-    form action ="/shop/#{@itemsData[0]["id"]}/buy" method= "post"
-        input type= "submit" value="Köp #{items["name"]}"
+    form action ="/shop/#{items["id"]}/buy" method= "post"
+        input type = "submit" value="Köp #{items["name"]}"
+        input type="hidden" name="cost" value="#{items["cost"]}"
+
     hr
 
-h1 Money balance: #{@usersData}
+a href="/story2" Gå vidare
+
+h1 Money balance: #{@usersData["money"]}
+h2 Inventory
+-@usersInventory.each do |items|
+    p #{items["name"]}
+
+h2 Stats
+p User health: #{@userStats[0]["health"]}

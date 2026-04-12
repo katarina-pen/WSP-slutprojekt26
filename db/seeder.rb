@@ -28,12 +28,12 @@ def create_tables(db)
               id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
               username TEXT NOT NULL UNIQUE,
               pwd_digest TEXT NOT NULL,
-              money INTEGER DEFAULT 20  ) ')
+              money INTEGER DEFAULT 20,
+              health INTEGER DEFAULT 50 ) ')
             #felmeddelande för user_id "NOT NULL"-lös varför 
             #items är typ shop för tillfället, cost måste läggas till. user_id borde nog tas bort
   db.execute('CREATE TABLE items (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
-              user_id INTEGER ,
               type_id INTEGER,
               name TEXT NOT NULL,
               damage INT,
