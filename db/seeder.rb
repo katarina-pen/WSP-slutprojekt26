@@ -34,7 +34,6 @@ def create_tables(db)
             #items är typ shop för tillfället, cost måste läggas till. user_id borde nog tas bort
   db.execute('CREATE TABLE items (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
-              type_id INTEGER,
               name TEXT NOT NULL,
               damage INT,
               cost INTEGER NOT NULL )')
@@ -48,7 +47,6 @@ def create_tables(db)
 #lägg till rewards som spelaren får när fiendens state är död
    db.execute('CREATE TABLE enemies (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
-              type_id INTEGER,
               name TEXT NOT NULL,
               damage INT,
               health INT,
@@ -60,19 +58,15 @@ end
 
 
 def populate_tables(db)
-  #USERS
-  #alla spelare börjar med 10 money
-  # db.execute('INSERT INTO users (money) VALUES ("10")')
-  db.execute('INSERT INTO users_items (items_id) VALUES ("Liten gren")')
-  
-  #ITEMS /SHOP
+ 
+   #ITEMS /SHOP
   db.execute('INSERT INTO items (cost, name, damage) VALUES ("1","Klubba", "10")')
   db.execute('INSERT INTO items (cost, name, damage) VALUES ("2","Svärd", "15")')
   db.execute('INSERT INTO items (cost, name, damage) VALUES ("2","Kniv", "3")')
   #ENEMIES
-  db.execute('INSERT INTO enemies (type_id, name, damage, health, state) VALUES ("2","gremlin", "10","50", "alive")')
-  db.execute('INSERT INTO enemies (type_id, name, damage, health, state) VALUES ("1","zombie", "15", "20", "alive")')
-  db.execute('INSERT INTO enemies (type_id, name, damage, health, state) VALUES ("2","troll", "3", "10", "alive")')
+  db.execute('INSERT INTO enemies (name, damage, health, state) VALUES ("gremlin", "10","50", "alive")')
+  db.execute('INSERT INTO enemies (name, damage, health, state) VALUES ("zombie", "15", "20", "alive")')
+  db.execute('INSERT INTO enemies (name, damage, health, state) VALUES ("troll", "3", "10", "alive")')
 end
 
 

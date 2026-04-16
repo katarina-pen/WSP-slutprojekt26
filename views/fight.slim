@@ -15,17 +15,6 @@ form action ="/enemies/#{@enemiesData[0]["id"]}/attack" method="post"
 
 br
 
-/ -@itemsData.each do |items|
-/     form action ="/enemies/#{@enemiesData[0]["id"]}/fight" method="get"
-/         input type="submit" value="Välj #{items["name"]}"
-/         input type="hidden" name="itemsDamage" value="#{items["damage"]}"
-/         input type= "hidden" name="enemyDamage" value="#{@enemiesData[0]["damage"]}"
-
-
-/ p Du har #{@usersInventory}
-
-/ p #{@usersInventory[0]["name"]}
-
 -@usersInventory.each do |items|
     form action ="/enemies/#{@enemiesData[0]["id"]}/fight" method="get"
         input type="submit" value="Välj #{items["name"]}"

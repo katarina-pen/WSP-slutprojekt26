@@ -56,7 +56,10 @@ end
 #test sida för när users är inloggad
 get('/story') do
   user_id = session[:id].to_i
+  
   db = SQLite3:: Database.new("db/databas.db")
+  @username= db.execute("SELECT username from users WHERE id =?", user_id)
+
   db.results_as_hash = true
   @usersInventory= db.execute("SELECT 
   items.name, items.damage 
@@ -222,7 +225,8 @@ post("/shop/:id/buy") do
   users_id = session[:id]
   cost = params[:cost].to_i
   db = SQLite3:: Database.new("db/databas.db")
-  
+  db.results_as_hash = true
+
   itemExistCheck = db.execute("SELECT * FROM users_items WHERE users_id = ? AND items_id = ?",[users_id, id]).first
   if itemExistCheck != nil
     # "Du äger redan detta item"
