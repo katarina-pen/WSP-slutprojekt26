@@ -28,6 +28,7 @@ def create_tables(db)
               id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
               username TEXT NOT NULL UNIQUE,
               pwd_digest TEXT NOT NULL,
+              adminState BOOLEAN,
               money INTEGER DEFAULT 20,
               health INTEGER DEFAULT 50 ) ')
             #felmeddelande för user_id "NOT NULL"-lös varför 
@@ -58,7 +59,9 @@ end
 
 
 def populate_tables(db)
- 
+  #Hårkodad admin user
+  db.execute('INSERT INTO users (id, username, pwd_digest, adminState) VALUES ("1","admin", "BCrypt::Password.new(adminPassword)", "true")')
+
    #ITEMS /SHOP
   db.execute('INSERT INTO items (cost, name, damage) VALUES ("1","Klubba", "10")')
   db.execute('INSERT INTO items (cost, name, damage) VALUES ("2","Svärd", "15")')
