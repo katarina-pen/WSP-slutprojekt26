@@ -9,7 +9,7 @@ end
 def register_user(username,password)
   password_digest = BCrypt::Password.create(password) 
   db = connect_to_db('db/databas.db')
-  db.execute("INSERT INTO users (username, pwd_digest) VALUES (?,?)",[username, password_digest])
+  db.execute("INSERT INTO users (username, pwd_digest, adminState) VALUES (?,?,false)",[username, password_digest])
 end
 
 def login_user(username,password)
@@ -20,6 +20,9 @@ def login_user(username,password)
   return pwd_digest, id
 end
 
+#CRUD admin
+def create_items(newItemsType,newItemsName,newItemsDamg)
+end
 
 
 helpers do

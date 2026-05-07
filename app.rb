@@ -4,30 +4,13 @@ require 'sqlite3'
 require 'sinatra/reloader'
 require 'bcrypt'
 require_relative './model.rb'
-
+require 'sinatra/flash'
 
 enable :sessions
 
 
 
-#ska fixa sen!
-# helpers do
-#  def stats_inventory
-#   #  db = SQLite3::Database.new('db/books.db')
-#   #  db.results_as_hash = true
-#    db = connect_to_db('db/databas.db')
-#   #  result = db.execute("SELECT * FROM books")
-#     user_id = session[:id].to_i
 
-#    @usersInventory= db.execute("SELECT 
-#   items.name, items.damage 
-#   FROM users_items 
-#   INNER JOIN items ON users_items.items_id =items.id 
-#   WHERE users_id =?", user_id)
-#   @userStats = db.execute("SELECT health FROM users WHERE id =?", user_id)
-#    return @usersInventory && @userStats
-#  end
-# end 
 
 
 #USERS, register + login
@@ -39,20 +22,32 @@ post("/users/new") do
   username= params[:username]
   password= params[:password]
   password_confirm= params[:password_confirm]
+  
+  db = connect_to_db('db/databas.db')
+  # id = session[:id]
+  userExistCheck = db.execute("SELECT * FROM users WHERE username =?",username )
+      p "userArray är: #{userExistCheck}"
 
-  if (password == password_confirm)
-    #lägg till användare
-    # password_digest = BCrypt::Password.create(password) 
-    # # db = SQLite3:: Database.new("db/databas.db")
-    # db = connect_to_db('db/databas.db')
+  if (!userExistCheck.empty?)
+    flash[:user_exist] = "Denna användare finns redan! Välje ett annat användarnamn!"
+    redirect("/register")
+      # p "userArray är: #{userExistCheck}"
 
-    # db.execute("INSERT INTO users (username, pwd_digest) VALUES (?,?)",[username, password_digest])
+  elsif (password.length || password_confirm.length < 4 )
+    flash[:short_password] = "Ditt lösenord behöver MINST 4 karaktärer"
+    redirect("/register")
+
+  elsif (password == password_confirm)
     register_user(username, password)
-
+    p "Lösenordet är #{password.length}"
+    p "LösenordetConfirm är #{password.length}"
     redirect("/login")
   else
     #felhantering
-    "Passwords did not match :("
+    # "Passwords did not match :("
+    flash[:not_match_password] = "Dina lösenord matchar inte!"
+    redirect("/register")
+    
   end
 
 end
@@ -64,42 +59,30 @@ end
 post("/login") do
   username= params[:username]
   password= params[:password]
-  # db = SQLite3:: Database.new("db/databas.db")
-  # db.results_as_hash = true
-  # db = connect_to_db('db/databas.db')
 
-  # result= db.execute("SELECT * FROM users WHERE username=?",username).first
-  # pwd_digest=result["pwd_digest"]
-  # id=result["id"]
-  # login_user(username, password)
   pwd_digest, id = login_user(username, password)
-
+    
+  session[:login_attempt] = 0
+  p "Antal login attempt: #{session[:login_attempt]}"
+  
   if BCrypt::Password.new(pwd_digest)==password
     session[:id] = id 
     redirect("/story")
   else  
-    "womp womp, fel lösenord"
+    # "womp womp, fel lösenord"
+    session[:login_attempt] += 1
+    flash[:wrong_password] = "Fel lösenord :C womp womp"
+    redirect("/login")
   end
 
 end
 
-#test sida för när users är inloggad
+
 get('/story') do
-  # user_id = session[:id].to_i
-  
-  # db = SQLite3:: Database.new("db/databas.db")
   
   db = connect_to_db('db/databas.db')
   #Fixa eller ta bort helt 
   # @username= db.execute("SELECT username from users WHERE id =?", user_id)
-
-  # # db.results_as_hash = true
-  # @usersInventory= db.execute("SELECT 
-  # items.name, items.damage 
-  # FROM users_items 
-  # INNER JOIN items ON users_items.items_id =items.id 
-  # WHERE users_id =?", user_id)
-  # @userStats = db.execute("SELECT health FROM users WHERE id =?", user_id)
   @usersInventory, @userStats=stats_inventory(session[:id].to_i)
   
   slim(:"story/story_1")
@@ -112,31 +95,35 @@ get('/story2') do
 end
 
 get('/story3') do
-  # user_id = session[:id]
-  # db = SQLite3:: Database.new("db/databas.db")
-  # db.results_as_hash = true
-  # db = connect_to_db('db/databas.db')
-
-  # @usersInventory= db.execute("SELECT 
-  # items.name, items.damage 
-  # FROM users_items 
-  # INNER JOIN items ON users_items.items_id =items.id 
-  # WHERE users_id =?", user_id)
-  # @userStats = db.execute("SELECT health FROM users WHERE id =?", user_id)
   @usersInventory, @userStats=stats_inventory(session[:id].to_i)
 
   slim(:"story/story_3")
 
 end
 
-#READ📖
-get('/') do
-  # db = SQLite3:: Database.new("db/databas.db")
-  # db.results_as_hash = true
-  db = connect_to_db('db/databas.db')
 
-  @itemsData = db.execute("SELECT * FROM items")
-  @enemiesData = db.execute("SELECT * FROM enemies")
+before('/protected/*') do
+ p "These are protected_methods"
+   db = connect_to_db('db/databas.db')
+    currentUser = session[:id]
+    adminState= db.execute("SELECT adminState FROM users WHERE id =?",currentUser)
+  # if session[:id] ==  nil
+  if adminState ==  nil
+    p "Du är inte admin :( Inte välkommen >:("
+    #Ingen användare är inloggad
+   redirect('/register')
+ end
+end
+
+
+#READ📖
+get('/protected/home') do
+
+  db = connect_to_db('db/databas.db')
+  @enemiesData, @itemsData=damage_data(params[:id].to_i)
+
+  # @itemsData = db.execute("SELECT * FROM items")
+  # @enemiesData = db.execute("SELECT * FROM enemies")
 
   
   slim(:index) 
@@ -154,9 +141,8 @@ post('/new') do
 
   p "Användaren vill skapa #{newItemsName} med damage #{newItemsDamg} och type id #{newItemsType} "
 
-  # db = SQLite3::Database.new("db/databas.db")
   db = connect_to_db('db/databas.db')
-
+  #jag tog bort type_id, rätta och ta bort det i update o allt
   db.execute("INSERT INTO items (type_id, name, damage) VALUES (?,?,?)", [newItemsType,newItemsName,newItemsDamg])
   redirect("/") 
 
@@ -164,9 +150,7 @@ end
 
 #UPDATE🔁 
 get('/items/:id/edit') do
-  # db = SQLite3::Database.new("db/databas.db")
-
-  # db.results_as_hash = true
+  
   db = connect_to_db('db/databas.db')
   id = params[:id].to_i
   @update_items = db.execute("SELECT * FROM items WHERE id=?",id).first
@@ -179,7 +163,6 @@ post('/items/:id/update') do
   damage = params[:damage]
   # type_id = params[:type_id]
 
-  # db = SQLite3::Database.new("db/databs.db")
   db = connect_to_db('db/databas.db')
   db.execute("UPDATE items SET name=?, damage=? WHERE id=?",[name,damage,id])
   redirect('/')
@@ -189,7 +172,6 @@ end
 #DELETE🗑️
 post('/items/:id/delete') do 
   id = params[:id].to_i
-  # db = SQLite3::Database.new("db/databas.db")
   db = connect_to_db('db/databas.db')
   db.execute("DELETE FROM items WHERE id = ?",id)
   redirect("/")
@@ -200,19 +182,10 @@ get('/enemies/:id/fight') do
   id = params[:id].to_i
   user_id = session[:id]
   @itemsDamg = params[:itemsDamage].to_i
-  # db = SQLite3:: Database.new("db/databas.db")
-  # db.results_as_hash = true
+  
   db = connect_to_db('db/databas.db')
-  # @enemiesData = db.execute("SELECT * FROM enemies WHERE id = ?",id)
-  # @itemsData = db.execute("SELECT * FROM items")
   @enemiesData, @itemsData=damage_data(params[:id].to_i)
 
-  # @usersInventory= db.execute("SELECT 
-  # items.name, items.damage 
-  # FROM users_items 
-  # INNER JOIN items ON users_items.items_id =items.id 
-  # WHERE users_id =?", user_id)
-  # @userStats = db.execute("SELECT health FROM users WHERE id =?", user_id)
   @usersInventory, @userStats=stats_inventory(session[:id].to_i)
 
 
@@ -231,20 +204,13 @@ end
 
 post("/enemies/:id/attack") do
   id = params[:id].to_i
-  # user_id = session[:id]
-  # @itemsDamg = params[:itemsDamage].to_i
-  # enemyDamage= params[:enemyDamage].to_i
 
-  # db = SQLite3::Database.new("db/databas.db")
   db = connect_to_db('db/databas.db')
-  # @itemsData = db.execute("SELECT * FROM items")
   
   #båda returneras i funktion men jag använder endast 1 här
   @enemiesData, @itemsData=damage_data(params[:id].to_i)
 
-  # db.execute("UPDATE users SET health=health-? WHERE id =?",[enemyDamage, user_id])
   update_user_health(params[:enemyDamage].to_i,session[:id] )
-  # db.execute("UPDATE enemies SET health=health-? WHERE id = ?",[@itemsDamg, id])
   update_enemy_health(params[:itemsDamage].to_i, params[:id].to_i)
   
   redirect("/enemies/#{id}/fight")
@@ -257,54 +223,23 @@ end
 
 #SHOP🛒💵💰
 get("/shop") do
-  #användarens id, vem som är inloggad
-  # user_id = session[:id]
-  # db = SQLite3:: Database.new("db/databas.db")
-  # db.results_as_hash = true
-  # db = connect_to_db('db/databas.db')
-  # @itemsData = db.execute("SELECT * FROM items")
-  
-  #använder mig endast av @itemsData här
-  # @enemiesData, @itemsData=damage_data(params[:id].to_i)
 
-
-  # @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id)
-  # @usersData, @itemsData = user_item_data(session[:id])
   @usersData = user_data(session[:id])
   @itemsData = item_data()
   p "itemsData är: #{@itemsData}"
-
-
-
-  # @usersInventory= db.execute("SELECT 
-  # items.name, items.damage 
-  # FROM users_items 
-  # INNER JOIN items ON users_items.items_id =items.id 
-  # WHERE users_id =?", user_id)
-  # @userStats = db.execute("SELECT health FROM users WHERE id =?", user_id)
   @usersInventory, @userStats=stats_inventory(session[:id].to_i)
 
   slim(:shop)
 end
 
 post("/shop/:id/buy") do
-  #items id
-  # id = params[:id].to_i
-  # users_id = session[:id]
-  # cost = params[:cost].to_i
-  # db = SQLite3:: Database.new("db/databas.db")
-  # db.results_as_hash = true
-  # db = connect_to_db('db/databas.db')
+
   itemExistCheck=unique_items_checker(session[:id], params[:id].to_i)
 
-  # itemExistCheck = db.execute("SELECT * FROM users_items WHERE users_id = ? AND items_id = ?",[users_id, id]).first
   if itemExistCheck != nil
     # "Du äger redan detta item"
 
   else 
-    # db.execute("UPDATE users SET money=money-? WHERE id = ?",[cost, users_id])
-    # db.execute("INSERT INTO users_items (users_id, items_id) VALUES (?,?)",[users_id, id] )
-    # buy_item(cost,user_id,id)
     buy_item(params[:cost].to_i, users_id = session[:id])
     get_item(session[:id], params[:id].to_i)
 

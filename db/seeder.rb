@@ -43,8 +43,10 @@ def create_tables(db)
               users_id INT,
               items_id INT,
               PRIMARY KEY (users_id, items_id),
-              FOREIGN KEY (users_id) REFERENCES users(id),
-              FOREIGN KEY (items_id) REFERENCES items(id) )')
+              FOREIGN KEY (users_id) REFERENCES users(id)
+              ON DELETE CASCADE,
+              FOREIGN KEY (items_id) REFERENCES items(id)
+              ON DELETE CASCADE )')
 #lägg till rewards som spelaren får när fiendens state är död
    db.execute('CREATE TABLE enemies (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
