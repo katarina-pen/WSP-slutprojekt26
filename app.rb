@@ -5,12 +5,56 @@ require 'sinatra/reloader'
 require 'bcrypt'
 require_relative './model.rb'
 require 'sinatra/flash'
+require 'time'
+
 
 enable :sessions
 
+include Model
 
+#HELPER FUNKTIONER
+helpers do
+    def stats_inventory(user_id)
+      db = connect_to_db('db/databas.db')
+      # user_id = session[:id].to_i
+      @usersInventory= db.execute("SELECT 
+      items.name, items.damage 
+      FROM users_items 
+      INNER JOIN items ON users_items.items_id =items.id 
+      WHERE users_id =?", user_id)
+      @userStats = db.execute("SELECT health FROM users WHERE id =?", user_id)
+      return @usersInventory, @userStats
+    end
+end
 
+   #Fight 
+helpers do
+  def damage_data(id)
+    db = connect_to_db('db/databas.db')
+    @enemiesData = db.execute("SELECT * FROM enemies WHERE id = ?",id)
+    @itemsData = db.execute("SELECT * FROM items")
+    return @enemiesData, @itemsData
+  end
+end
 
+   #Shop
+helpers do
+  def user_data(user_id)
+    db = connect_to_db('db/databas.db')
+    @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id).first
+    # @itemsData = db.execute("SELECT * FROM items")
+    return @usersData
+  end
+end
+
+helpers do
+  def item_data()
+    db = connect_to_db('db/databas.db')
+    # @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id).first
+    @itemsData = db.execute("SELECT * FROM items")
+    return @itemsData
+  end
+end
 
 
 #USERS, register + login
@@ -33,7 +77,7 @@ post("/users/new") do
     redirect("/register")
       # p "userArray är: #{userExistCheck}"
 
-  elsif (password.length || password_confirm.length < 4 )
+  elsif (password.length < 4 || password_confirm.length < 4 )
     flash[:short_password] = "Ditt lösenord behöver MINST 4 karaktärer"
     redirect("/register")
 
@@ -41,6 +85,7 @@ post("/users/new") do
     register_user(username, password)
     p "Lösenordet är #{password.length}"
     p "LösenordetConfirm är #{password.length}"
+
     redirect("/login")
   else
     #felhantering
@@ -52,6 +97,10 @@ post("/users/new") do
 
 end
 
+# before("/attempts/*") do
+#   @login_attempt = 0
+# end
+
 get("/login") do
   slim(:login)
 end
@@ -59,21 +108,58 @@ end
 post("/login") do
   username= params[:username]
   password= params[:password]
-
-  pwd_digest, id = login_user(username, password)
-    
-  session[:login_attempt] = 0
-  p "Antal login attempt: #{session[:login_attempt]}"
   
-  if BCrypt::Password.new(pwd_digest)==password
-    session[:id] = id 
-    redirect("/story")
-  else  
-    # "womp womp, fel lösenord"
-    session[:login_attempt] += 1
-    flash[:wrong_password] = "Fel lösenord :C womp womp"
+  db = connect_to_db('db/databas.db')
+  userExistCheck = db.execute("SELECT * FROM users WHERE username = ?",[username]).first
+
+  # session[:login_attempt] = 0
+  # p "Antal login attempt: #{session[:login_attempt]}"
+  
+  timeDiff = (Time.now - session[:wrong_time])
+
+
+  if (timeDiff < 30 )
+    flash[:timeOut] = "Du har precis fått en 30 sekunder TIMEOUT!"
+    sleep(30)
     redirect("/login")
+  else
+    if (userExistCheck != nil)
+      pwd_digest, id = login_user(username, password)
+
+      if BCrypt::Password.new(pwd_digest)==password
+        session[:id] = id 
+        redirect("/story")
+      else  
+        # "womp womp, fel lösenord"
+        # session[:login_attempt] += 1
+        # p "#{session[:login_attempt]}"
+        flash[:wrong_password] = "Fel lösenord :C womp womp"
+        session[:wrong_time] = Time.now
+        p "#{session[:wrong_time]}"
+        redirect("/login")
+      end
+
+    else 
+      flash[:user_not_exist] = "användaren finns inte! 🤯"
+      session[:wrong_time] = Time.now
+      p "#{session[:wrong_time]}"
+      redirect("/login")
+
+    end
+
   end
+
+  
+  # if BCrypt::Password.new(pwd_digest)==password
+  #   session[:id] = id 
+  #   redirect("/story")
+  # else  
+  #   # "womp womp, fel lösenord"
+  #   session[:login_attempt] += 1
+  #   p "#{session[:login_attempt]}"
+  #   flash[:wrong_password] = "Fel lösenord :C womp womp"
+  #   redirect("/login")
+  # end
 
 end
 
@@ -104,11 +190,11 @@ end
 
 before('/protected/*') do
  p "These are protected_methods"
-   db = connect_to_db('db/databas.db')
+    db = connect_to_db('db/databas.db')
     currentUser = session[:id]
     adminState= db.execute("SELECT adminState FROM users WHERE id =?",currentUser)
   # if session[:id] ==  nil
-  if adminState ==  nil
+  if adminState[0]["adminState"] !=  1
     p "Du är inte admin :( Inte välkommen >:("
     #Ingen användare är inloggad
    redirect('/register')
@@ -141,9 +227,11 @@ post('/new') do
 
   p "Användaren vill skapa #{newItemsName} med damage #{newItemsDamg} och type id #{newItemsType} "
 
-  db = connect_to_db('db/databas.db')
+  # db = connect_to_db('db/databas.db')
   #jag tog bort type_id, rätta och ta bort det i update o allt
-  db.execute("INSERT INTO items (type_id, name, damage) VALUES (?,?,?)", [newItemsType,newItemsName,newItemsDamg])
+  # db.execute("INSERT INTO items (type_id, name, damage) VALUES (?,?,?)", [newItemsType,newItemsName,newItemsDamg])
+  create_items(newItemsName,newItemsDamg)
+
   redirect("/") 
 
 end
@@ -153,7 +241,8 @@ get('/items/:id/edit') do
   
   db = connect_to_db('db/databas.db')
   id = params[:id].to_i
-  @update_items = db.execute("SELECT * FROM items WHERE id=?",id).first
+  # @update_items = db.execute("SELECT * FROM items WHERE id=?",id).first
+  edit_items(id)
   slim(:edit)
 end
 
@@ -163,8 +252,9 @@ post('/items/:id/update') do
   damage = params[:damage]
   # type_id = params[:type_id]
 
-  db = connect_to_db('db/databas.db')
-  db.execute("UPDATE items SET name=?, damage=? WHERE id=?",[name,damage,id])
+  # db = connect_to_db('db/databas.db')
+  # db.execute("UPDATE items SET name=?, damage=? WHERE id=?",[name,damage,id])
+  update_items(name, damage, id)
   redirect('/')
 
 end
@@ -172,8 +262,9 @@ end
 #DELETE🗑️
 post('/items/:id/delete') do 
   id = params[:id].to_i
-  db = connect_to_db('db/databas.db')
-  db.execute("DELETE FROM items WHERE id = ?",id)
+  # db = connect_to_db('db/databas.db')
+  # db.execute("DELETE FROM items WHERE id = ?",id)
+  delete_items(id)
   redirect("/")
 end
 

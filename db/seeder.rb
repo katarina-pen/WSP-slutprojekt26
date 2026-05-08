@@ -1,4 +1,15 @@
 require 'sqlite3'
+require 'bcrypt'
+# require_relative '../model.rb'
+
+# def register_user(username,password)
+#   password_digest = BCrypt::Password.create(password) 
+#   db = connect_to_db('db/databas.db')
+#   db.execute("INSERT INTO users (username, pwd_digest, adminState) VALUES (?,?,?)",[username, password_digest, 1])
+# end
+
+# plain_adminPwd ="adminPassword"
+# hashed_adminPwd =BCrypt::Password.create(plain_adminPwd)
 
 db = SQLite3::Database.new("databas.db")
 
@@ -62,7 +73,9 @@ end
 
 def populate_tables(db)
   #Hårkodad admin user
-  db.execute('INSERT INTO users (id, username, pwd_digest, adminState) VALUES ("1","admin", "BCrypt::Password.new(adminPassword)", "true")')
+  db.execute('INSERT INTO users (id, username, pwd_digest, adminState) VALUES ("1","admin", "$2a$12$ozLv6r8lVXDXR4km4ykjcOiLcxUuIQP1hZhaxqXfAgu9xH8VBcdkm", 1)')
+
+  # register_user("admin", "adminPassword")
 
    #ITEMS /SHOP
   db.execute('INSERT INTO items (cost, name, damage) VALUES ("1","Klubba", "10")')

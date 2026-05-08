@@ -1,103 +1,124 @@
-#HELPER funktioner
-def connect_to_db(path)
- db = SQLite3::Database.new(path)
- db.results_as_hash = true
- return db
-end
-
-
-def register_user(username,password)
-  password_digest = BCrypt::Password.create(password) 
-  db = connect_to_db('db/databas.db')
-  db.execute("INSERT INTO users (username, pwd_digest, adminState) VALUES (?,?,false)",[username, password_digest])
-end
-
-def login_user(username,password)
- db = connect_to_db('db/databas.db')
-  result= db.execute("SELECT * FROM users WHERE username=?",username).first
-  pwd_digest=result["pwd_digest"]
-  id=result["id"]
-  return pwd_digest, id
-end
-
-#CRUD admin
-def create_items(newItemsType,newItemsName,newItemsDamg)
-end
-
-
-helpers do
-  def stats_inventory(user_id)
-    db = connect_to_db('db/databas.db')
-    # user_id = session[:id].to_i
-    @usersInventory= db.execute("SELECT 
-    items.name, items.damage 
-    FROM users_items 
-    INNER JOIN items ON users_items.items_id =items.id 
-    WHERE users_id =?", user_id)
-    @userStats = db.execute("SELECT health FROM users WHERE id =?", user_id)
-    return @usersInventory, @userStats
+module Model 
+  
+  def connect_to_db(path)
+    db = SQLite3::Database.new(path)
+    db.results_as_hash = true
+    return db
   end
-end
 
-#Fight 
-helpers do
-  def damage_data(id)
+
+  def register_user(username,password)
+    password_digest = BCrypt::Password.create(password) 
     db = connect_to_db('db/databas.db')
-    @enemiesData = db.execute("SELECT * FROM enemies WHERE id = ?",id)
-    @itemsData = db.execute("SELECT * FROM items")
-    return @enemiesData, @itemsData
+    db.execute("INSERT INTO users (username, pwd_digest, adminState) VALUES (?,?,?)",[username, password_digest, 0])
   end
-end
 
-
-def update_user_health(enemyDamage, user_id)
-  db = connect_to_db('db/databas.db')
-  db.execute("UPDATE users SET health=health-? WHERE id =?",[enemyDamage, user_id])
-end
-
-def update_enemy_health(itemsDamg,id)
-  db = connect_to_db('db/databas.db')
-  db.execute("UPDATE enemies SET health=health-? WHERE id = ?",[@itemsDamg, id])
-
-end
-
-
-
-#Shop
-helpers do
-  def user_data(user_id)
+  def login_user(username,password)
     db = connect_to_db('db/databas.db')
-    @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id).first
-    # @itemsData = db.execute("SELECT * FROM items")
-    return @usersData
+    result= db.execute("SELECT * FROM users WHERE username=?",username).first
+    pwd_digest=result["pwd_digest"]
+    id=result["id"]
+    return pwd_digest, id
   end
-end
 
-helpers do
-  def item_data()
+  #CRUD admin
+  def create_items(newItemsName,newItemsDamg)
     db = connect_to_db('db/databas.db')
-    # @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id).first
-    @itemsData = db.execute("SELECT * FROM items")
-    return @itemsData
+    db.execute("INSERT INTO items (name, damage) VALUES (?,?)", [newItemsName,newItemsDamg])
   end
-end
+
+  def edit_items(id) 
+    db = connect_to_db('db/databas.db')
+    @update_items = db.execute("SELECT * FROM items WHERE id=?",id).first
+  end
+
+  def update_items(name, damage,id)
+    db = connect_to_db('db/databas.db')
+    db.execute("UPDATE items SET name=?, damage=? WHERE id=?",[name,damage,id])
+
+  end
+
+  def delete_items(id)
+    db = connect_to_db('db/databas.db')
+    db.execute("DELETE FROM items WHERE id = ?",id)
+  end
 
 
-def unique_items_checker(users_id, id)
-  db = connect_to_db('db/databas.db')
-  itemExistCheck = db.execute("SELECT * FROM users_items WHERE users_id = ? AND items_id = ?",[users_id, id]).first
-  return itemExistCheck
-end
+  # helpers do
+  #   def stats_inventory(user_id)
+  #     db = connect_to_db('db/databas.db')
+  #     # user_id = session[:id].to_i
+  #     @usersInventory= db.execute("SELECT 
+  #     items.name, items.damage 
+  #     FROM users_items 
+  #     INNER JOIN items ON users_items.items_id =items.id 
+  #     WHERE users_id =?", user_id)
+  #     @userStats = db.execute("SELECT health FROM users WHERE id =?", user_id)
+  #     return @usersInventory, @userStats
+  #   end
+  # end
 
-def buy_item(cost, users_id) 
-  db = connect_to_db('db/databas.db')
-  db.execute("UPDATE users SET money=money-? WHERE id = ?",[cost, users_id])
-  # db.execute("INSERT INTO users_items (users_id, items_id) VALUES (?,?)",[users_id, id] )
-  # return 
-end
+  # #Fight 
+  # helpers do
+  #   def damage_data(id)
+  #     db = connect_to_db('db/databas.db')
+  #     @enemiesData = db.execute("SELECT * FROM enemies WHERE id = ?",id)
+  #     @itemsData = db.execute("SELECT * FROM items")
+  #     return @enemiesData, @itemsData
+  #   end
+  # end
 
-def get_item(users_id,id)
-  db = connect_to_db('db/databas.db')
-  db.execute("INSERT INTO users_items (users_id, items_id) VALUES (?,?)",[users_id, id] )
+
+  def update_user_health(enemyDamage, user_id)
+    db = connect_to_db('db/databas.db')
+    db.execute("UPDATE users SET health=health-? WHERE id =?",[enemyDamage, user_id])
+  end
+
+  def update_enemy_health(itemsDamg,id)
+    db = connect_to_db('db/databas.db')
+    db.execute("UPDATE enemies SET health=health-? WHERE id = ?",[@itemsDamg, id])
+
+  end
+
+
+
+  # #Shop
+  # helpers do
+  #   def user_data(user_id)
+  #     db = connect_to_db('db/databas.db')
+  #     @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id).first
+  #     # @itemsData = db.execute("SELECT * FROM items")
+  #     return @usersData
+  #   end
+  # end
+
+  # helpers do
+  #   def item_data()
+  #     db = connect_to_db('db/databas.db')
+  #     # @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id).first
+  #     @itemsData = db.execute("SELECT * FROM items")
+  #     return @itemsData
+  #   end
+  # end
+
+
+  def unique_items_checker(users_id, id)
+    db = connect_to_db('db/databas.db')
+    itemExistCheck = db.execute("SELECT * FROM users_items WHERE users_id = ? AND items_id = ?",[users_id, id]).first
+    return itemExistCheck
+  end
+
+  def buy_item(cost, users_id) 
+    db = connect_to_db('db/databas.db')
+    db.execute("UPDATE users SET money=money-? WHERE id = ?",[cost, users_id])
+    # db.execute("INSERT INTO users_items (users_id, items_id) VALUES (?,?)",[users_id, id] )
+    # return 
+  end
+
+  def get_item(users_id,id)
+    db = connect_to_db('db/databas.db')
+    db.execute("INSERT INTO users_items (users_id, items_id) VALUES (?,?)",[users_id, id] )
+
+  end
 
 end
