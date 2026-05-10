@@ -6,6 +6,12 @@ module Model
     return db
   end
 
+  def register_admin(username,password)
+    password_digest = BCrypt::Password.create(password) 
+    db = SQLite3::Database.new("databas.db")
+    db.execute("INSERT INTO users (username, pwd_digest, adminState) VALUES (?,?,?)",[username, password_digest, 1])
+  end
+
 
   def register_user(username,password)
     password_digest = BCrypt::Password.create(password) 

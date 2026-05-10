@@ -12,10 +12,13 @@ enable :sessions
 
 include Model
 
+
 #HELPER FUNKTIONER
 helpers do
     def stats_inventory(user_id)
-      db = connect_to_db('db/databas.db')
+      # db = connect_to_db('db/databas.db')
+      db = SQLite3::Database.new('db/databas.db')
+      db.results_as_hash = true
       # user_id = session[:id].to_i
       @usersInventory= db.execute("SELECT 
       items.name, items.damage 
@@ -30,8 +33,12 @@ end
    #Fight 
 helpers do
   def damage_data(id)
-    db = connect_to_db('db/databas.db')
+    # db = connect_to_db('db/databas.db')
+    db = SQLite3::Database.new('db/databas.db')
+    db.results_as_hash = true
     @enemiesData = db.execute("SELECT * FROM enemies WHERE id = ?",id)
+    p "enemiesData: #{@enemiesData}"
+
     @itemsData = db.execute("SELECT * FROM items")
     return @enemiesData, @itemsData
   end
@@ -40,7 +47,9 @@ end
    #Shop
 helpers do
   def user_data(user_id)
-    db = connect_to_db('db/databas.db')
+    # db = connect_to_db('db/databas.db')
+    db = SQLite3::Database.new('db/databas.db')
+    db.results_as_hash = true
     @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id).first
     # @itemsData = db.execute("SELECT * FROM items")
     return @usersData
@@ -49,7 +58,9 @@ end
 
 helpers do
   def item_data()
-    db = connect_to_db('db/databas.db')
+    # db = connect_to_db('db/databas.db')
+    db = SQLite3::Database.new('db/databas.db')
+    db.results_as_hash = true
     # @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id).first
     @itemsData = db.execute("SELECT * FROM items")
     return @itemsData
@@ -112,13 +123,31 @@ post("/login") do
   db = connect_to_db('db/databas.db')
   userExistCheck = db.execute("SELECT * FROM users WHERE username = ?",[username]).first
 
-  # session[:login_attempt] = 0
-  # p "Antal login attempt: #{session[:login_attempt]}"
   
-  timeDiff = (Time.now - session[:wrong_time])
+  # timeDiff = (Time.now - session[:wrong_time])
 
+  if session[:wrong_time] == nil
+        if (userExistCheck != nil)
+      pwd_digest, id = login_user(username, password)
 
-  if (timeDiff < 30 )
+      if BCrypt::Password.new(pwd_digest)==password
+        session[:id] = id 
+        redirect("/story")
+      else  
+        flash[:wrong_password] = "Fel lösenord :C womp womp"
+        session[:wrong_time] = Time.now
+        p "#{session[:wrong_time]}"
+        redirect("/login")
+      end
+
+    else 
+      flash[:user_not_exist] = "användaren finns inte! 🤯"
+      session[:wrong_time] = Time.now
+      p "#{session[:wrong_time]}"
+      redirect("/login")
+
+    end
+  elsif ((Time.now - session[:wrong_time]) < 30 )
     flash[:timeOut] = "Du har precis fått en 30 sekunder TIMEOUT!"
     sleep(30)
     redirect("/login")
@@ -130,9 +159,6 @@ post("/login") do
         session[:id] = id 
         redirect("/story")
       else  
-        # "womp womp, fel lösenord"
-        # session[:login_attempt] += 1
-        # p "#{session[:login_attempt]}"
         flash[:wrong_password] = "Fel lösenord :C womp womp"
         session[:wrong_time] = Time.now
         p "#{session[:wrong_time]}"
@@ -148,18 +174,6 @@ post("/login") do
     end
 
   end
-
-  
-  # if BCrypt::Password.new(pwd_digest)==password
-  #   session[:id] = id 
-  #   redirect("/story")
-  # else  
-  #   # "womp womp, fel lösenord"
-  #   session[:login_attempt] += 1
-  #   p "#{session[:login_attempt]}"
-  #   flash[:wrong_password] = "Fel lösenord :C womp womp"
-  #   redirect("/login")
-  # end
 
 end
 
@@ -194,8 +208,18 @@ before('/protected/*') do
     currentUser = session[:id]
     adminState= db.execute("SELECT adminState FROM users WHERE id =?",currentUser)
   # if session[:id] ==  nil
-  if adminState[0]["adminState"] !=  1
-    p "Du är inte admin :( Inte välkommen >:("
+  #lägg till att om user inte är inloggad så är dom inte heller välkomna
+  # sessions[:id] = nil ??
+  p currentUser
+  p adminState
+  if  currentUser == nil
+    # p "Du är inte admin :( Inte välkommen >:("
+    flash[:admin_error] = "Du är inte admin :( Inte välkommen >:("
+    redirect('/register')
+
+  elsif adminState[0]["adminState"] !=  1
+    # p "Du är inte admin :( Inte välkommen >:("
+    flash[:admin_error] = "Du är inte admin :( Inte välkommen >:("
     #Ingen användare är inloggad
    redirect('/register')
  end
@@ -274,7 +298,8 @@ get('/enemies/:id/fight') do
   user_id = session[:id]
   @itemsDamg = params[:itemsDamage].to_i
   
-  db = connect_to_db('db/databas.db')
+  # db = connect_to_db('db/databas.db')
+  p @enemiesData
   @enemiesData, @itemsData=damage_data(params[:id].to_i)
 
   @usersInventory, @userStats=stats_inventory(session[:id].to_i)

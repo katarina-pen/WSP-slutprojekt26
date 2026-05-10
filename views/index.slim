@@ -1,14 +1,10 @@
 div class="title" 
-    h1 Home Page
-    <p class="text-blue-600 dark:text-sky-400">This is the index file</p>
-
-    link href="index.css" rel='stylesheet' type='text/css'
+    h1 Admin Page
     br
 h1 ITEMS
 -@itemsData.each do |items|
     p Namn: #{items["name"]}
     p Damage: #{items["damage"]}
-    p Type: #{items["type_id"]}
     br
 
 h1 ENEMIES
@@ -26,9 +22,7 @@ br
 h1 CHANGE ITEMS
 -@itemsData.each do |items|
     p #{items["name"]}
-    p Damage: #{items["damage"]}
-    p Type: #{items["type_id"]}
-    
+    p Damage: #{items["damage"]}    
     h5 
         a href="/items/#{items["id"]}/edit" Redigera #{items["name"]} 
 
