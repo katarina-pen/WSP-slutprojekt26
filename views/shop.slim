@@ -8,13 +8,13 @@ hr
     p Name: #{items["name"]}
     p Damage: #{items["damage"]}
     p Cost: #{items["cost"]}
-    form action ="/shop/#{items["id"]}/buy" method= "post"
+    form action ="/shop/#{items["id"]}/update" method= "post"
         input type = "submit" value="Köp #{items["name"]}"
         input type="hidden" name="cost" value="#{items["cost"]}"
 
     hr
 
-a href="/story2" Gå vidare
+a href="/story/2" Gå vidare
 
 h1 Money balance: #{@usersData["money"]}
 h2 Inventory

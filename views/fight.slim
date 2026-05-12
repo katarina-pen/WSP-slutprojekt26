@@ -7,7 +7,7 @@ p Damage: #{@enemiesData[0]["damage"]}
 p Health: #{@enemiesData[0]["health"]}
 p State: #{@enemiesData[0]["state"]}
 
-form action ="/enemies/#{@enemiesData[0]["id"]}/attack" method="post"
+form action ="/enemies/#{@enemiesData[0]["id"]}/update" method="post"
     input type="submit" value="Attackera #{@enemiesData[0]["name"]}"
     input type="hidden" name="itemsDamage" value="#{@itemsDamg}"
     input type="hidden" name="enemyDamage" value="#{@enemiesData[0]["damage"]}"
@@ -16,7 +16,7 @@ form action ="/enemies/#{@enemiesData[0]["id"]}/attack" method="post"
 br
 
 -@usersInventory.each do |items|
-    form action ="/enemies/#{@enemiesData[0]["id"]}/fight" method="get"
+    form action ="/enemies/#{@enemiesData[0]["id"]}" method="get"
         input type="submit" value="Välj #{items["name"]}"
         input type="hidden" name="itemsDamage" value="#{items["damage"]}"
 

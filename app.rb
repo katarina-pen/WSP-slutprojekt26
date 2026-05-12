@@ -13,13 +13,16 @@ enable :sessions
 include Model
 
 
-#HELPER FUNKTIONER
 helpers do
+    # Fetches the user's inventory and health stats
+    #
+    # @param [Integer] user_id The user's ID
+    #
+    # @return [Array] usersInventory List of items the user owns
+    # @return [Array] userStats The user's health stats
     def stats_inventory(user_id)
-      # db = connect_to_db('db/databas.db')
       db = SQLite3::Database.new('db/databas.db')
       db.results_as_hash = true
-      # user_id = session[:id].to_i
       @usersInventory= db.execute("SELECT 
       items.name, items.damage 
       FROM users_items 
@@ -28,65 +31,69 @@ helpers do
       @userStats = db.execute("SELECT health FROM users WHERE id =?", user_id)
       return @usersInventory, @userStats
     end
+
+    # Fetches a specific enemy and all items
+    #
+    # @param [Integer] id The enemy's ID
+    #
+    # @return [Array] enemiesData The enemy's data
+    # @return [Array] itemsData All items
+    def damage_data(id)
+      db = SQLite3::Database.new('db/databas.db')
+      db.results_as_hash = true
+      @enemiesData = db.execute("SELECT * FROM enemies WHERE id = ?",id)
+      @itemsData = db.execute("SELECT * FROM items")
+      return @enemiesData, @itemsData
+    end
+
+    # Fetches a specific user's data
+    #
+    # @param [Integer] user_id The user's ID
+    #
+    # @return [Hash] the user's data
+    def user_data(user_id)
+      db = SQLite3::Database.new('db/databas.db')
+      db.results_as_hash = true
+      @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id).first
+      return @usersData
+    end
+
+    # Fetches all items from the database
+    #
+    # @return [Array] all items
+    def item_data()
+      db = SQLite3::Database.new('db/databas.db')
+      db.results_as_hash = true
+      @itemsData = db.execute("SELECT * FROM items")
+      return @itemsData
+    end
+  
 end
 
-   #Fight 
-helpers do
-  def damage_data(id)
-    # db = connect_to_db('db/databas.db')
-    db = SQLite3::Database.new('db/databas.db')
-    db.results_as_hash = true
-    @enemiesData = db.execute("SELECT * FROM enemies WHERE id = ?",id)
-    p "enemiesData: #{@enemiesData}"
-
-    @itemsData = db.execute("SELECT * FROM items")
-    return @enemiesData, @itemsData
-  end
-end
-
-   #Shop
-helpers do
-  def user_data(user_id)
-    # db = connect_to_db('db/databas.db')
-    db = SQLite3::Database.new('db/databas.db')
-    db.results_as_hash = true
-    @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id).first
-    # @itemsData = db.execute("SELECT * FROM items")
-    return @usersData
-  end
-end
-
-helpers do
-  def item_data()
-    # db = connect_to_db('db/databas.db')
-    db = SQLite3::Database.new('db/databas.db')
-    db.results_as_hash = true
-    # @usersData = db.execute("SELECT * FROM users WHERE id = ?", user_id).first
-    @itemsData = db.execute("SELECT * FROM items")
-    return @itemsData
-  end
-end
-
-
-#USERS, register + login
+# Displays the registration form
+#
 get("/register") do
   slim(:register)
 end
 
-post("/users/new") do
+# Registers a new user and redirects to login
+#
+# @param [String] username The desired username
+# @param [String] password The desired password
+# @param [String] password_confirm The repeated password
+#
+# @see Model#register_user
+post("/register/new") do
   username= params[:username]
   password= params[:password]
   password_confirm= params[:password_confirm]
   
   db = connect_to_db('db/databas.db')
-  # id = session[:id]
   userExistCheck = db.execute("SELECT * FROM users WHERE username =?",username )
-      p "userArray är: #{userExistCheck}"
 
   if (!userExistCheck.empty?)
     flash[:user_exist] = "Denna användare finns redan! Välje ett annat användarnamn!"
     redirect("/register")
-      # p "userArray är: #{userExistCheck}"
 
   elsif (password.length < 4 || password_confirm.length < 4 )
     flash[:short_password] = "Ditt lösenord behöver MINST 4 karaktärer"
@@ -94,13 +101,9 @@ post("/users/new") do
 
   elsif (password == password_confirm)
     register_user(username, password)
-    p "Lösenordet är #{password.length}"
-    p "LösenordetConfirm är #{password.length}"
 
     redirect("/login")
   else
-    #felhantering
-    # "Passwords did not match :("
     flash[:not_match_password] = "Dina lösenord matchar inte!"
     redirect("/register")
     
@@ -108,14 +111,19 @@ post("/users/new") do
 
 end
 
-# before("/attempts/*") do
-#   @login_attempt = 0
-# end
 
+# Displays the login form
+#
 get("/login") do
   slim(:login)
 end
 
+# Attempts login with cooldown and redirects to story/1 on success
+#
+# @param [String] username The user's username
+# @param [String] password The user's password
+#
+# @see Model#login_user
 post("/login") do
   username= params[:username]
   password= params[:password]
@@ -123,16 +131,13 @@ post("/login") do
   db = connect_to_db('db/databas.db')
   userExistCheck = db.execute("SELECT * FROM users WHERE username = ?",[username]).first
 
-  
-  # timeDiff = (Time.now - session[:wrong_time])
-
   if session[:wrong_time] == nil
         if (userExistCheck != nil)
       pwd_digest, id = login_user(username, password)
 
       if BCrypt::Password.new(pwd_digest)==password
         session[:id] = id 
-        redirect("/story")
+        redirect("/story/1")
       else  
         flash[:wrong_password] = "Fel lösenord :C womp womp"
         session[:wrong_time] = Time.now
@@ -157,7 +162,7 @@ post("/login") do
 
       if BCrypt::Password.new(pwd_digest)==password
         session[:id] = id 
-        redirect("/story")
+        redirect("/story/1")
       else  
         flash[:wrong_password] = "Fel lösenord :C womp womp"
         session[:wrong_time] = Time.now
@@ -177,140 +182,144 @@ post("/login") do
 
 end
 
+# Displays story page 1
+#
+get('/story/1') do
 
-get('/story') do
-  
   db = connect_to_db('db/databas.db')
-  #Fixa eller ta bort helt 
-  # @username= db.execute("SELECT username from users WHERE id =?", user_id)
   @usersInventory, @userStats=stats_inventory(session[:id].to_i)
   
   slim(:"story/story_1")
 end
 
-get('/story2') do
+# Displays story page 2
+#
+get('/story/2') do
 
   slim(:"story/story_2")
 
 end
 
-get('/story3') do
+# Displays story page 3 with user stats
+#
+get('/story/3') do
   @usersInventory, @userStats=stats_inventory(session[:id].to_i)
 
   slim(:"story/story_3")
 
 end
 
-
+# Checks admin authorization before accessing protected routes
+#
+# @see Model#connect_to_db
 before('/protected/*') do
  p "These are protected_methods"
     db = connect_to_db('db/databas.db')
     currentUser = session[:id]
     adminState= db.execute("SELECT adminState FROM users WHERE id =?",currentUser)
-  # if session[:id] ==  nil
-  #lägg till att om user inte är inloggad så är dom inte heller välkomna
-  # sessions[:id] = nil ??
-  p currentUser
-  p adminState
+
   if  currentUser == nil
-    # p "Du är inte admin :( Inte välkommen >:("
     flash[:admin_error] = "Du är inte admin :( Inte välkommen >:("
     redirect('/register')
 
   elsif adminState[0]["adminState"] !=  1
-    # p "Du är inte admin :( Inte välkommen >:("
     flash[:admin_error] = "Du är inte admin :( Inte välkommen >:("
-    #Ingen användare är inloggad
    redirect('/register')
  end
 end
 
-
-#READ📖
+# Displays the admin home page with items
+#
 get('/protected/home') do
-
   db = connect_to_db('db/databas.db')
-  @enemiesData, @itemsData=damage_data(params[:id].to_i)
-
-  # @itemsData = db.execute("SELECT * FROM items")
-  # @enemiesData = db.execute("SELECT * FROM enemies")
-
-  
+  @enemiesData, @itemsData=damage_data(params[:enemyId])
   slim(:index) 
 end
 
-#CREATE🔥📄
-get('/new') do 
+# Displays the form for creating a new item
+#
+get('/protected/items/new') do 
   slim(:new)
 end
 
-post('/new') do
+# Creates a new item and redirects to home
+#
+# @param [String] itemsName The name of the item
+# @param [Integer] itemsDamg The damage of the item
+# @param [Integer] itemsCost The cost of the item
+
+#
+# @see Model#create_items
+post('/protected/items') do
   newItemsName = params[:itemsName]
   newItemsDamg = params[:itemsDamg]
-  newItemsType = params[:itemsType]
+  newItemsCost = params[:itemsCost]
 
-  p "Användaren vill skapa #{newItemsName} med damage #{newItemsDamg} och type id #{newItemsType} "
+  create_items(newItemsName,newItemsDamg, newItemsCost)
 
-  # db = connect_to_db('db/databas.db')
-  #jag tog bort type_id, rätta och ta bort det i update o allt
-  # db.execute("INSERT INTO items (type_id, name, damage) VALUES (?,?,?)", [newItemsType,newItemsName,newItemsDamg])
-  create_items(newItemsName,newItemsDamg)
-
-  redirect("/") 
+  redirect("/protected/home") 
 
 end
 
-#UPDATE🔁 
-get('/items/:id/edit') do
+# Displays the edit form for an item
+#
+# @param [Integer] :id The item's ID
+#
+# @see Model#edit_items
+get('/protected/items/:id/edit') do
   
   db = connect_to_db('db/databas.db')
   id = params[:id].to_i
-  # @update_items = db.execute("SELECT * FROM items WHERE id=?",id).first
   edit_items(id)
   slim(:edit)
 end
 
-post('/items/:id/update') do
+# Updates an item and redirects to home
+#
+# @param [Integer] :id The item's ID
+# @param [String] name The new name
+# @param [Integer] damage The new damage value
+#
+# @see Model#update_items
+post('/protected/items/:id/update') do
   id = params[:id]
   name = params[:name]
   damage = params[:damage]
-  # type_id = params[:type_id]
-
-  # db = connect_to_db('db/databas.db')
-  # db.execute("UPDATE items SET name=?, damage=? WHERE id=?",[name,damage,id])
   update_items(name, damage, id)
-  redirect('/')
+  redirect('/protected/home')
 
 end
 
-#DELETE🗑️
-post('/items/:id/delete') do 
+# Deletes an item and redirects to home
+#
+# @param [Integer] :id The item's ID
+#
+# @see Model#delete_items
+post('/protected/items/:id/delete') do 
   id = params[:id].to_i
-  # db = connect_to_db('db/databas.db')
-  # db.execute("DELETE FROM items WHERE id = ?",id)
   delete_items(id)
-  redirect("/")
+  redirect("/protected/home")
 end
 
-#FIGHT!🤺⚔️
-get('/enemies/:id/fight') do
+# Displays the fight page for a specific enemy
+#
+# @param [Integer] :id The enemy's ID
+#
+# @see Model#update_user_health
+# @see Model#update_enemy_health
+get('/enemies/:id') do
   id = params[:id].to_i
   user_id = session[:id]
-  @itemsDamg = params[:itemsDamage].to_i
-  
-  # db = connect_to_db('db/databas.db')
-  p @enemiesData
   @enemiesData, @itemsData=damage_data(params[:id].to_i)
-
+  @itemsDamg = @itemsData[0]["damage"]
   @usersInventory, @userStats=stats_inventory(session[:id].to_i)
-
 
    if @userStats[0]["health"] <= 0
       redirect("/game_over")
   end
   
   if @enemiesData[0]["health"] <= 0
-    redirect("story3")
+    redirect("story/3")
   end
 
  
@@ -318,37 +327,53 @@ get('/enemies/:id/fight') do
   slim(:fight)
 end
 
-post("/enemies/:id/attack") do
+# Processes an attack and updates health values
+#
+# @param [Integer] :id The enemy's ID
+# @param [Integer] itemsDamage The damage of the selected item
+# @param [Integer] enemyDamage The damage of the enemy
+#
+# @see Model#update_user_health
+# @see Model#update_enemy_health
+post("/enemies/:id/update") do
   id = params[:id].to_i
-
   db = connect_to_db('db/databas.db')
-  
-  #båda returneras i funktion men jag använder endast 1 här
   @enemiesData, @itemsData=damage_data(params[:id].to_i)
+  @enemiesData, @itemsData=damage_data(params[:id].to_i)
+  @itemsDamg = @itemsData[0]["damage"]
 
   update_user_health(params[:enemyDamage].to_i,session[:id] )
-  update_enemy_health(params[:itemsDamage].to_i, params[:id].to_i)
-  
-  redirect("/enemies/#{id}/fight")
+  update_enemy_health(params[:itemsDamage].to_i, id)
+
+  redirect("/enemies/#{id}")
 end 
 
+# Displays the game over page
+#
 get("/game_over") do
   slim(:gameOver)
 end
 
-
-#SHOP🛒💵💰
+# Displays the shop with items and user stats
+#
 get("/shop") do
 
   @usersData = user_data(session[:id])
   @itemsData = item_data()
-  p "itemsData är: #{@itemsData}"
   @usersInventory, @userStats=stats_inventory(session[:id].to_i)
 
   slim(:shop)
 end
 
-post("/shop/:id/buy") do
+# Processes an item purchase
+#
+# @param [Integer] :id The item's ID
+# @param [Integer] cost The cost of the item
+#
+# @see Model#unique_items_checker
+# @see Model#buy_item
+# @see Model#get_item
+post("/shop/:id/update") do
 
   itemExistCheck=unique_items_checker(session[:id], params[:id].to_i)
 

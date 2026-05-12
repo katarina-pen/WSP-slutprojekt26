@@ -5,16 +5,19 @@ h1 ITEMS
 -@itemsData.each do |items|
     p Namn: #{items["name"]}
     p Damage: #{items["damage"]}
-    br
+    p Cost: #{items["cost"]}
+    hr
+a href="/protected/items/new" Lägg till ett nytt item 
+br
 
-h1 ENEMIES
+/ h1 ENEMIES
 -@enemiesData.each do |enemies|
     p Namn: #{enemies["name"]}
     p Damage: #{enemies["damage"]}
     p Type: #{enemies["type_id"]}
     p Health: #{enemies["health"]}
-    p State: #{enemies["state"]}
-    a href="/enemies/#{enemies["id"]}/fight" Fight #{enemies["name"]} 
+    p Id: #{enemies["id"]} 
+    / a href="/enemies/#{enemies["id"]}/fight" Fight #{enemies["name"]} 
 
     br
 
@@ -24,20 +27,13 @@ h1 CHANGE ITEMS
     p #{items["name"]}
     p Damage: #{items["damage"]}    
     h5 
-        a href="/items/#{items["id"]}/edit" Redigera #{items["name"]} 
+        a href="/protected/items/#{items["id"]}/edit" Redigera #{items["name"]} 
 
 
-    form action="/items/#{items["id"]}/delete" method="post"
+    form action="/protected/items/#{items["id"]}/delete" method="post"
       input type="submit" value="Ta bort #{items["name"]}🔥🗑️"
 
     hr
 
     
 
-/ h2 Skapa ett nytt item
-/ h5 
-/   a href="/todoNew" Ny todo
-
-/   h2 Registera användare
-/ h5 
-/   a href="/todoRegister" Registrera
